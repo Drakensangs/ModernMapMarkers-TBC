@@ -1,4 +1,5 @@
-ModernMapMarkers for Vanilla
+ModernMapMarkers for TBC
+
 Places markers on the world map to show the locations of dungeons, raids, world bosses, boats, zeppelins, and trams.
 
 /mmm to open the config menu

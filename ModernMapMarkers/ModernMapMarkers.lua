@@ -78,6 +78,9 @@ local points = {
 	{2, 22, 0.257, 0.73, "Boat to Ratchet", "boat", "Neutral", nil}, -- neutral
 	{2, 25, 0.616, 0.571, "Zeppelins to Orgrimmar & Grom'Gol", "zepp", "Horde", nil}, -- horde
 	{2, 22, 0.312, 0.298, "Zeppelins to UC & Orgrimmar", "zepp", "Horde", nil}, -- Horde
+	-- Eastern Kingdoms Portals
+	{2, 19, 0.495, 0.148, "Orb of Translocation - Silvermoon to Undercity", "portal", "Horde", nil}, -- horde
+	{2, 26, 0.595, 0.111, "Orb of Translocation - Undercity to Silvermoon", "portal", "Horde", nil}, -- horde
 	-- Outland Dungeons
     {3, 2, 0.480, 0.535, "Hellfire Ramparts", "dungeon", "60-62", 15},
     {3, 2, 0.461, 0.513, "The Blood Furnance", "dungeon", "60-62", 17},
@@ -101,6 +104,12 @@ local points = {
 	-- Outland World Bosses
 	{3, 2, 0.633, 0.156, "Doom Lord Kazzak", "worldboss", "70", nil},
     {3, 5, 0.729, 0.440, "Doomwalker", "worldboss", "70", nil},
+	-- Outland Portals
+	{3, 6, 0.597, 0.466, "Portal to Exodar", "portal", "Alliance", nil}, -- alliance
+	{3, 6, 0.591, 0.483, "Portal to Silvermoon", "portal", "Horde", nil}, -- horde
+	{3, 6, 0.558, 0.367, "Portals to Darnassus, Stormwind City & Ironforge", "portal", "Alliance", nil}, -- alliance
+	{3, 6, 0.522, 0.529, "Portals to Thunder Bluff, Orgrimmar & Undercity", "portal", "Horde", nil}, -- horde
+	{3, 6, 0.486, 0.420, "Portal to Isle of Quel'Danas", "portal", "Neutral", nil}, -- neutral
 }
 
 -- keeping zoneIDs for reference and debugging only
@@ -118,6 +127,7 @@ local masterToggle
 local dungeonRaidsToggle
 local transportToggle
 local worldBossToggle
+local portalToggle
 
 local function print(string) 
     DEFAULT_CHAT_FRAME:AddMessage(string) 
@@ -180,6 +190,8 @@ local function CreateMapPin(parent, x, y, size, texture, tooltipText, tooltipInf
                     AtlasOptions.AtlasType = 2 -- 1 is EK, 2 is Kalimdor
                 elseif currentContinent == 2 then
                     AtlasOptions.AtlasType = 1 -- 1 is EK, 2 is Kalimdor
+				elseif currentContinent == 3 then
+				    AtlasOptions.AtlasType = 3
                 end
                 
                 AtlasOptions.AtlasZone = atlasID
@@ -259,6 +271,8 @@ local function UpdateMarkers()
             shouldDisplay = ModernMapMarkersDB.showWorldBosses
         elseif kind == "boat" or kind == "zepp" or kind == "tram" then
             shouldDisplay = ModernMapMarkersDB.showTransport
+        elseif kind == "portal" then
+            shouldDisplay = ModernMapMarkersDB.showPortals
         end
         
         if not shouldDisplay then
@@ -301,6 +315,9 @@ local function UpdateMarkers()
                 elseif kind == "tram" then
                     texture = "Interface\\Addons\\ModernMapMarkers\\Textures\\tram.tga"
                     size = 24
+                elseif kind == "portal" then
+                    texture = "Interface\\Addons\\ModernMapMarkers\\Textures\\portal.tga"
+					size = 24
                 else -- Dungeon
                     texture = "Interface\\Addons\\ModernMapMarkers\\Textures\\dungeon.tga"
                 end
@@ -354,6 +371,9 @@ local function UpdateCheckboxStates()
     end
     if worldBossToggle then
         worldBossToggle:SetChecked(ModernMapMarkersDB.showWorldBosses)
+    end
+    if portalToggle then
+        portalToggle:SetChecked(ModernMapMarkersDB.showPortals)
     end
 end
 
@@ -431,6 +451,7 @@ local function CreateConfigUI()
     dungeonRaidsToggle = CreateToggleCheckbox(config, 20, -75, "Show Dungeons & Raids", "showDungeonRaids")
     transportToggle = CreateToggleCheckbox(config, 20, -100, "Show Transport (Boats, Zeppelins, Trams)", "showTransport")
     worldBossToggle = CreateToggleCheckbox(config, 20, -125, "Show World Bosses", "showWorldBosses")
+    portalToggle = CreateToggleCheckbox(config, 20, -150, "Show Portals", "showPortals")
 
     local closeButton = CreateFrame("Button", nil, config, "UIPanelButtonTemplate")
     closeButton:SetWidth(80)
@@ -452,7 +473,8 @@ local function InitializeSavedVariables()
             showMarkers = true,
             showDungeonRaids = true,
             showTransport = true,
-            showWorldBosses = true
+            showWorldBosses = true,
+			showPortals = true
         }
         if debug then
             print("Modern Map Markers: Created new saved variables with defaults")
@@ -471,6 +493,9 @@ local function InitializeSavedVariables()
         if ModernMapMarkersDB.showWorldBosses == nil then
             ModernMapMarkersDB.showWorldBosses = true
         end
+        if ModernMapMarkersDB.showPortals == nil then
+            ModernMapMarkersDB.showPortals = true
+        end
     end
     
     if debug then
@@ -479,6 +504,7 @@ local function InitializeSavedVariables()
         print("  showDungeonRaids: " .. tostring(ModernMapMarkersDB.showDungeonRaids))
         print("  showTransport: " .. tostring(ModernMapMarkersDB.showTransport))
         print("  showWorldBosses: " .. tostring(ModernMapMarkersDB.showWorldBosses))
+        print("  showPortals: " .. tostring(ModernMapMarkersDB.showPortals))
     end
 end
 

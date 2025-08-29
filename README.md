@@ -9,4 +9,6 @@ Additionally, if you have Atlas and Atlas Quest installed, when you click the to
 
 <img width="241" height="178" alt="Untitled3" src="https://github.com/user-attachments/assets/3eb2fdcc-55aa-4596-8bbd-398ab7d2da44" /> <img width="394" height="145" alt="Untitled1" src="https://github.com/user-attachments/assets/78bbb456-50e3-41d9-8302-07f9794159df" />
 
+<img width="520" height="480" alt="Untitled5" src="https://github.com/user-attachments/assets/808eb250-7e97-4ddf-a2ff-462cde774eee" />
+
 Authors: Original addon: tilr & Heallios; TBC version: Drakensangs

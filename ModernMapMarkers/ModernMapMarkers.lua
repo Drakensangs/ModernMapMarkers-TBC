@@ -11,13 +11,13 @@ local points = {
     {1, 19, 0.407, 0.873, "Razorfen Kraul", "dungeon", "29-38", 16},
     {1, 19, 0.462, 0.357, "Wailing Caverns", "dungeon", "17-24", 19},
     {1, 17, 0.389, 0.184, "Zul'Farrak", "dungeon", "44-54", 21},
+	{1, 17, 0.650, 0.470, "Old Hillsbrad Foothills", "dungeon", "66-70", 5},
+	{1, 17, 0.685, 0.480, "The Black Morass", "dungeon", "68-70", 6},
 	-- Kalimdor Raids
 	{1, 9, 0.53, 0.76, "Onyxia's Lair", "raid", "60", 13},
 	{1, 15, 0.296, 0.960, "Ruins of Ahn'Qiraj", "raid", "60", 17},
 	{1, 15, 0.282, 0.956, "Temple of Ahn'Qiraj", "raid", "60", 18},
 	{1, 17, 0.670, 0.450, "Hyjal Summit", "raid", "70", 4},
-	{1, 17, 0.650, 0.470, "Old Hillsbrad Foothills", "dungeon", "66-70", 5},
-	{1, 17, 0.685, 0.480, "The Black Morass", "dungeon", "68-70", 6},
 	-- Kalimdor World Bosses
 	{1, 2, 0.535, 0.816, "Azuregos", "worldboss", "60", nil},
 	{1, 1, 0.937, 0.355, "Emerald Dragon - Spawn Point 1 of 4", "worldboss", "60", nil},
@@ -596,3 +596,4 @@ end
 if debug then
     DEFAULT_CHAT_FRAME:AddMessage("Modern Map Markers: Initial Load Complete")
 end
+

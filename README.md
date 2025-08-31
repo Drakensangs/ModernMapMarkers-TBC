@@ -1,3 +1,5 @@
+# ModernMapMarkers for The Burning Crusade
+
 Places markers on the world map to show the locations of dungeons, raids, world bosses, boats, zeppelins, trams & portals.
 
 /mmm brings up the config menu.

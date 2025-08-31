@@ -273,14 +273,9 @@ local function UpdateMarkers()
         elseif kind == "boat" or kind == "zepp" or kind == "tram" then
             shouldDisplay = ModernMapMarkersDB.showTransport
         elseif kind == "portal" then
-            -- base toggle for portals
             shouldDisplay = ModernMapMarkersDB.showPortals
-
-            -- NEW: if user enabled hideOtherFactionPortals, hide portals that are faction-specific
-            -- 'info' holds "Alliance", "Horde" or "Neutral" in our data
             if shouldDisplay and ModernMapMarkersDB.hideOtherFactionPortals then
                 local playerFaction = UnitFactionGroup("player")
-                -- only hide if portal is specifically Alliance or Horde (ignore Neutral)
                 if info == "Alliance" and playerFaction == "Horde" then
                     shouldDisplay = false
                     if debug then print("Hiding Alliance portal due to faction filter: " .. label) end

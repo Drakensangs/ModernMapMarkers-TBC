@@ -2,7 +2,7 @@
 
 Places markers on the world map to show the locations of dungeons, raids, world bosses, boats, zeppelins, trams & portals.
 
-/mmm brings up the config menu.
+**/mmm** brings up the config menu.
 
 Additionally, if you have Atlas and Atlas Quest installed, when you click the tooltip it will open Atlas and show you the right map and available quests.
 

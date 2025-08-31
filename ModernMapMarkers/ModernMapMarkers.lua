@@ -23,7 +23,7 @@ local points = {
 	{1, 1, 0.937, 0.355, "Emerald Dragon - Spawn Point 1 of 4", "worldboss", "60", nil},
 	{1, 11, 0.512, 0.108, "Emerald Dragon - Spawn Point 2 of 4", "worldboss", "60", nil},
     -- Kalimdor Transport
-    {1, 8, 0.512, 0.135, "Zeppelins to UC & Grom'Gol", "zepp", "Horde", nil},  -- horde
+    {1, 8, 0.512, 0.135, "Zeppelins to Tirisfal Glades & Grom'Gol", "zepp", "Horde", nil},  -- horde
     {1, 19, 0.636, 0.389, "Boat to Booty Bay", "boat", "Neutral", nil},  -- neutral
 	{1, 5, 0.333, 0.399, "Boat to Rut'Theran Village", "boat", "Alliance", nil}, -- alliance
 	{1, 5, 0.308, 0.410, "Boat to Azuremyst Isle", "boat", "Alliance", nil}, -- alliance
@@ -76,11 +76,11 @@ local points = {
 	{2, 29, 0.051, 0.634, "Boat to Theramore Isle", "boat", "Alliance", nil},  -- alliance
 	{2, 29, 0.046, 0.572, "Boat to Auberdine", "boat", "Alliance", nil}, -- alliance
 	{2, 22, 0.257, 0.73, "Boat to Ratchet", "boat", "Neutral", nil}, -- neutral
-	{2, 25, 0.616, 0.571, "Zeppelins to Orgrimmar & Grom'Gol", "zepp", "Horde", nil}, -- horde
-	{2, 22, 0.312, 0.298, "Zeppelins to UC & Orgrimmar", "zepp", "Horde", nil}, -- Horde
+	{2, 25, 0.616, 0.571, "Zeppelins to Durotar & Grom'Gol", "zepp", "Horde", nil}, -- horde
+	{2, 22, 0.312, 0.298, "Zeppelins to Tirisfal Glades & Durotar", "zepp", "Horde", nil}, -- Horde
 	-- Eastern Kingdoms Portals
-	{2, 19, 0.495, 0.148, "Orb of Translocation - Silvermoon to Undercity", "portal", "Horde", nil}, -- horde
-	{2, 26, 0.595, 0.111, "Orb of Translocation - Undercity to Silvermoon", "portal", "Horde", nil}, -- horde
+	{2, 19, 0.495, 0.148, "Orb of Translocation:\nSilvermoon to Ruins of Lordaeron", "portal", "Horde", nil}, -- horde
+	{2, 26, 0.595, 0.111, "Orb of Translocation:\nRuins of Lordaeron to Silvermoon", "portal", "Horde", nil}, -- horde
 	-- Outland Dungeons
     {3, 2, 0.480, 0.535, "Hellfire Ramparts", "dungeon", "60-62", 15},
     {3, 2, 0.461, 0.513, "The Blood Furnance", "dungeon", "60-62", 17},
@@ -107,7 +107,7 @@ local points = {
 	-- Outland Portals
 	{3, 6, 0.597, 0.466, "Portal to Exodar", "portal", "Alliance", nil}, -- alliance
 	{3, 6, 0.591, 0.483, "Portal to Silvermoon", "portal", "Horde", nil}, -- horde
-	{3, 6, 0.558, 0.367, "Portals to Darnassus, Stormwind City & Ironforge", "portal", "Alliance", nil}, -- alliance
+	{3, 6, 0.558, 0.367, "Portals to Darnassus, Stormwind & Ironforge", "portal", "Alliance", nil}, -- alliance
 	{3, 6, 0.522, 0.529, "Portals to Thunder Bluff, Orgrimmar & Undercity", "portal", "Horde", nil}, -- horde
 	{3, 6, 0.486, 0.420, "Portal to Isle of Quel'Danas", "portal", "Neutral", nil}, -- neutral
 }
@@ -128,6 +128,7 @@ local dungeonRaidsToggle
 local transportToggle
 local worldBossToggle
 local portalToggle
+local portalFactionToggle
 
 local function print(string) 
     DEFAULT_CHAT_FRAME:AddMessage(string) 
@@ -272,7 +273,22 @@ local function UpdateMarkers()
         elseif kind == "boat" or kind == "zepp" or kind == "tram" then
             shouldDisplay = ModernMapMarkersDB.showTransport
         elseif kind == "portal" then
+            -- base toggle for portals
             shouldDisplay = ModernMapMarkersDB.showPortals
+
+            -- NEW: if user enabled hideOtherFactionPortals, hide portals that are faction-specific
+            -- 'info' holds "Alliance", "Horde" or "Neutral" in our data
+            if shouldDisplay and ModernMapMarkersDB.hideOtherFactionPortals then
+                local playerFaction = UnitFactionGroup("player")
+                -- only hide if portal is specifically Alliance or Horde (ignore Neutral)
+                if info == "Alliance" and playerFaction == "Horde" then
+                    shouldDisplay = false
+                    if debug then print("Hiding Alliance portal due to faction filter: " .. label) end
+                elseif info == "Horde" and playerFaction == "Alliance" then
+                    shouldDisplay = false
+                    if debug then print("Hiding Horde portal due to faction filter: " .. label) end
+                end
+            end
         end
         
         if not shouldDisplay then
@@ -375,12 +391,15 @@ local function UpdateCheckboxStates()
     if portalToggle then
         portalToggle:SetChecked(ModernMapMarkersDB.showPortals)
     end
+    if portalFactionToggle then
+        portalFactionToggle:SetChecked(ModernMapMarkersDB.hideOtherFactionPortals)
+    end
 end
 
 local function CreateConfigUI()
     config = CreateFrame("Frame", "MMMConfigFrame", UIParent)
     config:SetWidth(320)
-    config:SetHeight(220)
+    config:SetHeight(240)
     config:SetPoint("CENTER", UIParent, "CENTER")
 	
 	tinsert(UISpecialFrames, "MMMConfigFrame")
@@ -452,6 +471,7 @@ local function CreateConfigUI()
     transportToggle = CreateToggleCheckbox(config, 20, -100, "Show Transport (Boats, Zeppelins, Trams)", "showTransport")
     worldBossToggle = CreateToggleCheckbox(config, 20, -125, "Show World Bosses", "showWorldBosses")
     portalToggle = CreateToggleCheckbox(config, 20, -150, "Show Portals", "showPortals")
+    portalFactionToggle = CreateToggleCheckbox(config, 20, -175, "Hide Opposing Faction Portals", "hideOtherFactionPortals")
 
     local closeButton = CreateFrame("Button", nil, config, "UIPanelButtonTemplate")
     closeButton:SetWidth(80)
@@ -474,7 +494,8 @@ local function InitializeSavedVariables()
             showDungeonRaids = true,
             showTransport = true,
             showWorldBosses = true,
-			showPortals = true
+			showPortals = true,
+            hideOtherFactionPortals = true,
         }
         if debug then
             print("Modern Map Markers: Created new saved variables with defaults")
@@ -496,6 +517,9 @@ local function InitializeSavedVariables()
         if ModernMapMarkersDB.showPortals == nil then
             ModernMapMarkersDB.showPortals = true
         end
+        if ModernMapMarkersDB.hideOtherFactionPortals == nil then
+            ModernMapMarkersDB.hideOtherFactionPortals = true
+        end
     end
     
     if debug then
@@ -505,6 +529,7 @@ local function InitializeSavedVariables()
         print("  showTransport: " .. tostring(ModernMapMarkersDB.showTransport))
         print("  showWorldBosses: " .. tostring(ModernMapMarkersDB.showWorldBosses))
         print("  showPortals: " .. tostring(ModernMapMarkersDB.showPortals))
+        print("  hideOtherFactionPortals: " .. tostring(ModernMapMarkersDB.hideOtherFactionPortals))
     end
 end
 
@@ -596,4 +621,3 @@ end
 if debug then
     DEFAULT_CHAT_FRAME:AddMessage("Modern Map Markers: Initial Load Complete")
 end
-

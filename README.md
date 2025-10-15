@@ -1,8 +1,8 @@
-🗺️ **ModernMapMarkers** (TBC 2.4.3)
+# 🗺️ **ModernMapMarkers** (TBC 2.4.3)
 
 A lightweight addon that places markers on the world map for dungeons, raids, world bosses, boats, zeppelins, trams & portals.
 
-✨ **Features**
+## ✨ **Features**
 
  Enable/disable different marker types.
  
@@ -12,16 +12,16 @@ A lightweight addon that places markers on the world map for dungeons, raids, wo
  
  Options menu avaialble in the Interface/Addons tab, or type **/mmm** to open the options menu.
 
- 👨‍💻 **Authors**
+## 👨‍💻 **Authors**
 
 Original addon: tilr & Heallios; 
 
 TBC 2.4.3 version: Drakensangs
 
-📸 **Screenshots**
+## 📸 **Screenshots**
 
-<img width="437" height="485" alt="Untitled5" src="https://github.com/user-attachments/assets/e9ffbb2f-f40f-43db-ac53-b6b4edf479a9" />
-<img width="487" height="456" alt="Untitled" src="https://github.com/user-attachments/assets/66a9a1ae-077c-428e-8027-b433e8808747" />
+<img width="437" height="485" alt="Untitled5" src="https://github.com/user-attachments/assets/e9ffbb2f-f40f-43db-ac53-b6b4edf479a9" />\
+<img width="487" height="456" alt="Untitled" src="https://github.com/user-attachments/assets/66a9a1ae-077c-428e-8027-b433e8808747" />\
 <img width="492" height="443" alt="Untitled4" src="https://github.com/user-attachments/assets/fa408f57-72c3-4f3d-9341-df6a6f8f027e" />
 <img width="659" height="492" alt="Untitled4" src="https://github.com/user-attachments/assets/4937930a-a429-4bda-8558-76dfde689289" />
 <img width="678" height="529" alt="Untitled3" src="https://github.com/user-attachments/assets/e848e43a-9b10-4876-aeaa-e2812e6bce03" />

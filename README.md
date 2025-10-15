@@ -10,7 +10,7 @@ A lightweight addon that places markers on the world map for dungeons, raids, wo
  
  **Atlas** & **AtlasQuest** support. Click any dungeon, raid and world boss markers to open up the coresponding Atlas page.
  
- Type **/mmm** to open the options menu.
+ Options menu avaialble in the Interface/Addons tab, or type **/mmm** to open the options menu.
 
  👨‍💻 **Authors**
 

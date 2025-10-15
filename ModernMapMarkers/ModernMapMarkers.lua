@@ -195,7 +195,6 @@ local UnitFactionGroup = UnitFactionGroup
 local tinsert = table.insert
 local tremove = table.remove
 local math_random = math.random
-local string_find = string.find
 local pcall = pcall
 
 -- Indexed point lookup by continent and zone
@@ -215,6 +214,7 @@ local worldMapFrameLevel
 
 -- UI Elements
 local config
+local interfaceOptionsPanel
 local masterToggle
 local dungeonRaidsToggle
 local transportToggle
@@ -223,10 +223,21 @@ local worldBossToggle
 local portalToggle
 local portalFactionToggle
 local markerLabel
+-- Interface Options checkboxes
+local ioMasterToggle
+local ioDungeonRaidsToggle
+local ioTransportToggle
+local ioTransportFactionToggle
+local ioWorldBossToggle
+local ioPortalToggle
+local ioPortalFactionToggle
 
 -- Event frame
 local frame = CreateFrame("Frame")
 local updateEnabled = false
+
+-- Reusable delay frame for AtlasLoot (prevents frame leaks)
+local atlasLootDelayFrame
 
 -- Build indexed lookup table
 local function BuildPointIndex()
@@ -304,9 +315,8 @@ local function ShowMarkerInfo(name, info)
     end
     
     -- Hide Blizzard's default area label
-    local areaLabel = WorldMapFrameAreaLabel
-    if areaLabel then
-        areaLabel:Hide()
+    if WorldMapFrameAreaLabel then
+        WorldMapFrameAreaLabel:Hide()
     end
     
     -- Set the marker name (white like normal Blizzard UI)
@@ -317,16 +327,14 @@ local function ShowMarkerInfo(name, info)
         local color = FACTION_COLORS[info]
         if color then
             -- Faction colored text
-            local infoText = markerLabel.info
-            infoText:SetTextColor(color[1], color[2], color[3])
-            infoText:SetText("(" .. info .. ")")
-            infoText:Show()
+            markerLabel.info:SetTextColor(color[1], color[2], color[3])
+            markerLabel.info:SetText("(" .. info .. ")")
+            markerLabel.info:Show()
         else
             -- Level info in yellow
-            local infoText = markerLabel.info
-            infoText:SetTextColor(1, 0.82, 0)
-            infoText:SetText("(Level " .. info .. ")")
-            infoText:Show()
+            markerLabel.info:SetTextColor(1, 0.82, 0)
+            markerLabel.info:SetText("(Level " .. info .. ")")
+            markerLabel.info:Show()
         end
     else
         markerLabel.info:Hide()
@@ -342,9 +350,8 @@ local function HideMarkerInfo()
     end
     
     -- Restore Blizzard's default area label
-    local areaLabel = WorldMapFrameAreaLabel
-    if areaLabel then
-        areaLabel:Show()
+    if WorldMapFrameAreaLabel then
+        WorldMapFrameAreaLabel:Show()
     end
 end
 
@@ -380,8 +387,7 @@ local function ReturnMarkerToPool(marker)
     marker.originalSize = nil
     
     -- Cap pool size to prevent unbounded growth
-    local poolSize = getn(markerPool)
-    if poolSize < MAX_POOL_SIZE then
+    if #markerPool < MAX_POOL_SIZE then
         tinsert(markerPool, marker)
     else
         marker:SetParent(nil)
@@ -390,8 +396,9 @@ end
 
 -- Random Nightmare Dragon selector
 local function GetRandomNightmareDragon()
-    local idx = math_random(1, #NIGHTMARE_DRAGONS)
-    return NIGHTMARE_DRAGONS[idx].id, NIGHTMARE_DRAGONS[idx].name
+    local idx = math_random(1, 4)
+    local dragon = NIGHTMARE_DRAGONS[idx]
+    return dragon.id, dragon.name
 end
 
 -- Check if world map is in fullscreen mode
@@ -443,15 +450,20 @@ local function OnWorldBossClick()
             AtlasFrame:Show()
         end
         
-        -- Small delay to ensure Atlas is fully shown before calling AtlasLoot
-        local delayFrame = CreateFrame("Frame")
-        delayFrame.timer = 0
-        delayFrame:SetScript("OnUpdate", function(self, elapsed)
+        -- Reuse delay frame instead of creating new ones (prevents memory leak)
+        if not atlasLootDelayFrame then
+            atlasLootDelayFrame = CreateFrame("Frame")
+        end
+        
+        atlasLootDelayFrame.timer = 0
+        atlasLootDelayFrame.dataID = dataID
+        atlasLootDelayFrame.displayName = displayName
+        atlasLootDelayFrame:SetScript("OnUpdate", function(self, elapsed)
             self.timer = self.timer + elapsed
             if self.timer >= 0.1 then
                 self:SetScript("OnUpdate", nil)
                 -- Protected call in case AtlasLoot has issues
-                local success = pcall(AtlasLoot_ShowBossLoot, dataID, displayName, AtlasFrame)
+                local success = pcall(AtlasLoot_ShowBossLoot, self.dataID, self.displayName, AtlasFrame)
                 if not success then
                     DEFAULT_CHAT_FRAME:AddMessage("|cFFFF0000Error loading AtlasLoot data.|r")
                 end
@@ -537,8 +549,7 @@ end
 
 -- Clear all active markers
 local function ClearMarkers()
-    local count = activeMarkersCount
-    for i = 1, count do
+    for i = 1, activeMarkersCount do
         ReturnMarkerToPool(activeMarkers[i])
         activeMarkers[i] = nil
     end
@@ -615,7 +626,7 @@ local function UpdateMarkers()
     local isHorde = (playerFaction == "Horde")
     local isAlliance = (playerFaction == "Alliance")
     
-    -- Pre-cache texture references for transport markers
+    -- Pre-cache texture references
     local texDungeon = TEXTURES.dungeon
     local texRaid = TEXTURES.raid
     local texWorldBoss = TEXTURES.worldboss
@@ -624,7 +635,7 @@ local function UpdateMarkers()
     local texTram = TEXTURES.tram
     local texPortal = TEXTURES.portal
 
-    local pointCount = getn(relevantPoints)
+    local pointCount = #relevantPoints
     for i = 1, pointCount do
         local data = relevantPoints[i]
         local x = data[3]
@@ -684,6 +695,83 @@ local function UpdateMarkers()
     end
 end
 
+-- Unified sync function (prevents duplicate code and redundant calls)
+local function SyncAllCheckboxes()
+    local db = ModernMapMarkersDB
+    
+    -- Sync /mmm window checkboxes
+    if masterToggle then
+        masterToggle:SetChecked(db.showMarkers)
+    end
+    if dungeonRaidsToggle then
+        dungeonRaidsToggle:SetChecked(db.showDungeonRaids)
+    end
+    if transportToggle then
+        transportToggle:SetChecked(db.showTransport)
+    end
+    if transportFactionToggle then
+        transportFactionToggle:SetChecked(db.hideOtherFactionTransport)
+    end
+    if worldBossToggle then
+        worldBossToggle:SetChecked(db.showWorldBosses)
+    end
+    if portalToggle then
+        portalToggle:SetChecked(db.showPortals)
+    end
+    if portalFactionToggle then
+        portalFactionToggle:SetChecked(db.hideOtherFactionPortals)
+    end
+    
+    -- Sync Interface Options checkboxes
+    if ioMasterToggle then
+        ioMasterToggle:SetChecked(db.showMarkers)
+    end
+    if ioDungeonRaidsToggle then
+        ioDungeonRaidsToggle:SetChecked(db.showDungeonRaids)
+    end
+    if ioTransportToggle then
+        ioTransportToggle:SetChecked(db.showTransport)
+    end
+    if ioTransportFactionToggle then
+        ioTransportFactionToggle:SetChecked(db.hideOtherFactionTransport)
+    end
+    if ioWorldBossToggle then
+        ioWorldBossToggle:SetChecked(db.showWorldBosses)
+    end
+    if ioPortalToggle then
+        ioPortalToggle:SetChecked(db.showPortals)
+    end
+    if ioPortalFactionToggle then
+        ioPortalFactionToggle:SetChecked(db.hideOtherFactionPortals)
+    end
+end
+
+-- Shared checkbox handler logic
+local function OnCheckboxClick(optionKey)
+    local isChecked = this:GetChecked()
+    ModernMapMarkersDB[optionKey] = isChecked and true or false
+    
+    if optionKey == "showMarkers" then
+        if not isChecked then
+            ClearMarkers()
+            if updateEnabled then
+                frame:UnregisterEvent("WORLD_MAP_UPDATE")
+                updateEnabled = false
+            end
+        else
+            if not updateEnabled then
+                frame:RegisterEvent("WORLD_MAP_UPDATE")
+                updateEnabled = true
+            end
+        end
+    end
+    
+    lastContinent = 0
+    lastZone = 0
+    UpdateMarkers()
+    SyncAllCheckboxes()
+end
+
 -- Toggle checkbox creation
 local function CreateToggleCheckbox(parent, x, y, text, optionKey)
     local checkbox = CreateFrame("CheckButton", nil, parent, "UICheckButtonTemplate")
@@ -697,27 +785,7 @@ local function CreateToggleCheckbox(parent, x, y, text, optionKey)
     checkbox.label = label
     
     checkbox:SetScript("OnClick", function()
-        local isChecked = this:GetChecked()
-        ModernMapMarkersDB[optionKey] = isChecked and true or false
-        
-        if optionKey == "showMarkers" then
-            if not isChecked then
-                ClearMarkers()
-                if updateEnabled then
-                    frame:UnregisterEvent("WORLD_MAP_UPDATE")
-                    updateEnabled = false
-                end
-            else
-                if not updateEnabled then
-                    frame:RegisterEvent("WORLD_MAP_UPDATE")
-                    updateEnabled = true
-                end
-            end
-        end
-        
-        lastContinent = 0
-        lastZone = 0
-        UpdateMarkers()
+        OnCheckboxClick(optionKey)
     end)
     
     return checkbox
@@ -760,25 +828,7 @@ local function CreateConfigUI()
     masterToggle:SetHeight(24)
 
     masterToggle:SetScript("OnClick", function()
-        local isChecked = this:GetChecked()
-        ModernMapMarkersDB.showMarkers = isChecked and true or false
-        
-        if not isChecked then
-            ClearMarkers()
-            if updateEnabled then
-                frame:UnregisterEvent("WORLD_MAP_UPDATE")
-                updateEnabled = false
-            end
-        else
-            if not updateEnabled then
-                frame:RegisterEvent("WORLD_MAP_UPDATE")
-                updateEnabled = true
-            end
-        end
-        
-        lastContinent = 0
-        lastZone = 0
-        UpdateMarkers()
+        OnCheckboxClick("showMarkers")
     end)
 
     dungeonRaidsToggle = CreateToggleCheckbox(config, 20, -75, "Show Dungeons & Raids", "showDungeonRaids")
@@ -800,29 +850,58 @@ local function CreateConfigUI()
     config:Hide()
 end
 
--- Sync checkboxes with saved variables
-local function SyncCheckboxes()
-    if masterToggle then
-        masterToggle:SetChecked(ModernMapMarkersDB.showMarkers)
+-- Create Interface Options panel
+local function CreateInterfaceOptionsPanel()
+    interfaceOptionsPanel = CreateFrame("Frame", "MMMInterfaceOptionsPanel")
+    interfaceOptionsPanel.name = "Modern Map Markers"
+    
+    local title = interfaceOptionsPanel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    title:SetPoint("TOPLEFT", 16, -16)
+    title:SetText("Modern Map Markers")
+    
+    local subtitle = interfaceOptionsPanel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
+    subtitle:SetText("Configure map marker display options")
+    
+    -- Helper function to create Interface Options checkboxes
+    local function CreateIOCheckbox(y, text, optionKey)
+        local checkbox = CreateFrame("CheckButton", nil, interfaceOptionsPanel, "UICheckButtonTemplate")
+        checkbox:SetPoint("TOPLEFT", 16, y)
+        checkbox:SetWidth(24)
+        checkbox:SetHeight(24)
+        
+        local label = checkbox:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        label:SetPoint("LEFT", checkbox, "RIGHT", 5, 0)
+        label:SetText(text)
+        
+        checkbox:SetScript("OnClick", function()
+            OnCheckboxClick(optionKey)
+        end)
+        
+        return checkbox
     end
-    if dungeonRaidsToggle then
-        dungeonRaidsToggle:SetChecked(ModernMapMarkersDB.showDungeonRaids)
+    
+    -- Create checkboxes
+    ioMasterToggle = CreateIOCheckbox(-60, "Enable Map Markers", "showMarkers")
+    ioDungeonRaidsToggle = CreateIOCheckbox(-90, "Show Dungeons & Raids", "showDungeonRaids")
+    ioTransportToggle = CreateIOCheckbox(-120, "Show Transports (Boats, Zeppelins, Trams)", "showTransport")
+    ioTransportFactionToggle = CreateIOCheckbox(-150, "Hide Opposing Faction Transports", "hideOtherFactionTransport")
+    ioWorldBossToggle = CreateIOCheckbox(-180, "Show World Bosses", "showWorldBosses")
+    ioPortalToggle = CreateIOCheckbox(-210, "Show Portals", "showPortals")
+    ioPortalFactionToggle = CreateIOCheckbox(-240, "Hide Opposing Faction Portals", "hideOtherFactionPortals")
+    
+    -- Add note about /mmm command
+    local cmdNote = interfaceOptionsPanel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    cmdNote:SetPoint("BOTTOMLEFT", 16, 16)
+    cmdNote:SetText("You can also type |cFFFFFF00/mmm|r to open a movable config window")
+    
+    -- Add refresh handler
+    interfaceOptionsPanel.refresh = function()
+        SyncAllCheckboxes()
     end
-    if transportToggle then
-        transportToggle:SetChecked(ModernMapMarkersDB.showTransport)
-    end
-    if transportFactionToggle then
-        transportFactionToggle:SetChecked(ModernMapMarkersDB.hideOtherFactionTransport)
-    end
-    if worldBossToggle then
-        worldBossToggle:SetChecked(ModernMapMarkersDB.showWorldBosses)
-    end
-    if portalToggle then
-        portalToggle:SetChecked(ModernMapMarkersDB.showPortals)
-    end
-    if portalFactionToggle then
-        portalFactionToggle:SetChecked(ModernMapMarkersDB.hideOtherFactionPortals)
-    end
+    
+    -- Register the panel
+    InterfaceOptions_AddCategory(interfaceOptionsPanel)
 end
 
 -- Initialize saved variables
@@ -870,6 +949,7 @@ frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:SetScript("OnEvent", function(self, event, arg1)
     if event == "ADDON_LOADED" and arg1 == "ModernMapMarkers" then
         CreateConfigUI()
+        CreateInterfaceOptionsPanel()
         BuildPointIndex()
         FreeDefaultPoints()
         worldMapFrameLevel = WorldMapButton:GetFrameLevel() + 3
@@ -879,7 +959,7 @@ frame:SetScript("OnEvent", function(self, event, arg1)
         if not initialized then
             InitializeSavedVariables()
             playerFaction = UnitFactionGroup("player")
-            SyncCheckboxes()
+            SyncAllCheckboxes()
             initialized = true
             
             -- Register map updates if enabled
@@ -895,6 +975,7 @@ frame:SetScript("OnEvent", function(self, event, arg1)
             InitializeSavedVariables()
             if not config then
                 CreateConfigUI()
+                CreateInterfaceOptionsPanel()
                 if defaultPoints then
                     BuildPointIndex()
                     FreeDefaultPoints()
@@ -902,7 +983,7 @@ frame:SetScript("OnEvent", function(self, event, arg1)
                 worldMapFrameLevel = WorldMapButton:GetFrameLevel() + 3
             end
             playerFaction = UnitFactionGroup("player")
-            SyncCheckboxes()
+            SyncAllCheckboxes()
             initialized = true
             
             -- Register map updates if enabled

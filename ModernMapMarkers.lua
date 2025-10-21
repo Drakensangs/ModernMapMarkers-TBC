@@ -42,7 +42,7 @@ local defaultPoints = {
     {2, 7, 0.178, 0.392, "Gnomeregan", "dungeon", "29-38", 8},
     {2, 7, 0.216, 0.3, "Gnomeregan\n|cFF808080(Workshop Entrance)|r", "dungeon", "29-38", 8},
     {2, 5, 0.32, 0.39, "Lower Blackrock Spire", "dungeon", "55-60", 3},
-	{2, 18, 0.379, 0.86, "Lower Blackrock Spire", "dungeon", "55-60", 3},
+	{2, 18, 0.379, 0.858, "Lower Blackrock Spire", "dungeon", "55-60", 3},
     {2, 25, 0.87, 0.325, "Scarlet Monastery - Armory", "dungeon", "32-42", 17}, 
     {2, 25, 0.862, 0.295, "Scarlet Monastery - Cathedral", "dungeon", "35-45", 18}, 
     {2, 25, 0.839, 0.283, "Scarlet Monastery - Graveyard", "dungeon", "26-36", 19},
